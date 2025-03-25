@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webserver-deployment
+  namespace: homework
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: webserver
+  template:
+    metadata:
+      labels:
+        app: webserver
+    spec:
+      nodeSelector:
+        homework: "true"   # Поды будут запускаться только на нодах с меткой homework=true
+      volumes:
+        - name: shared-data
+          emptyDir: {}  # Общий том для обмена данными между контейнерами
+      initContainers:
+        - name: init-container
+          image: busybox:latest
+          command:
+            - wget
+            - "-O"
+            - "/init/index.html"
+            - http://info.cern.ch
+          volumeMounts:
+            - name: shared-data
+              mountPath: /init  # Монтирование тома в директорию /init
+      containers:
+        - name: webserver-container
+          image: python:3.8-alpine
+          ports:
+            - containerPort: 8000
+          readinessProbe:
+            exec:
+              command: ["test", "-f", "/homework/index.html"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          lifecycle:
+            preStop:
+              exec:
+                command: ["rm", "-f", "/homework/index.html"]
+          command:
+            - sh
+            - -c
+            - |
+              # Запускаем веб-сервер на 8000 порту, отдающий содержимое директории /homework
+              python -m http.server 8000 --directory /homework
+          volumeMounts:
+            - name: shared-data
+              mountPath: /homework  # Монтирование тома в директорию /homework
