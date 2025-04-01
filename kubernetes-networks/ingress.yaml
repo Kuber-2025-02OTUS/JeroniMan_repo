@@ -6,12 +6,20 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/upstream-vhost: "homework.otus"
+    nginx.ingress.kubernetes.io/rewrite-target: /index.html
 spec:
   rules:
     - host: homework.otus
       http:
         paths:
           - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webserver-service
+                port:
+                  number: 80
+          - path: /homepage
             pathType: Prefix
             backend:
               service:
