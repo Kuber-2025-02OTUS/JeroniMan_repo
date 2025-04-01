@@ -11,3 +11,5 @@
 - По итогу - результат
   <img width="638" alt="Screenshot 2025-04-01 at 21 47 16" src="https://github.com/user-attachments/assets/bd4f7922-30d7-46f7-9b25-3f4d24f7815c" />
 - Для задания со * нужно было добавить аннотацию `nginx.ingress.kubernetes.io/rewrite-target: /index.html`
+  <img width="653" alt="Screenshot 2025-04-01 at 21 49 56" src="https://github.com/user-attachments/assets/ac86fc4d-b1f2-438f-9e81-7bb776d574ed" />
+
