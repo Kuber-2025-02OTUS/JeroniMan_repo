@@ -81,6 +81,9 @@ kubernetes-security/
 <img width="957" alt="Screenshot 2025-07-06 at 20 50 12" src="https://github.com/user-attachments/assets/67603ecc-2a91-4589-801f-3f4a474df6f8" />
 <img width="1266" alt="Screenshot 2025-07-06 at 20 53 08" src="https://github.com/user-attachments/assets/f91d2ac7-81c5-4066-8e77-fe5e62915604" />
 
+И финальная проверка
+<img width="1071" alt="Screenshot 2025-07-06 at 20 54 17" src="https://github.com/user-attachments/assets/4f7df4d5-06fd-4874-bb6f-8a0d8b751b3e" />
+
 
 
 ## Примечания
