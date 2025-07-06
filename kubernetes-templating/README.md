@@ -106,6 +106,9 @@ REVISION: 1
 ...
 ```
 
+<img width="1508" alt="Screenshot 2025-07-07 at 02 03 33" src="https://github.com/user-attachments/assets/51159e1f-168b-4665-8623-18a4f8e895b4" />
+
+
 **Работающие поды:**
 ```
 $ kubectl get pods -n homework
@@ -196,6 +199,9 @@ advertised.listeners=SASL_PLAINTEXT://kafka-prod-controller-0:9092
 security.inter.broker.protocol=SASL_PLAINTEXT
 ```
 
+<img width="1511" alt="Screenshot 2025-07-07 at 02 03 40" src="https://github.com/user-attachments/assets/c978a4ff-60dc-4461-a4c4-1a44aeb75960" />
+
+
 **Development (1 брокер, PLAINTEXT):**
 ```bash
 $ kubectl get pods -n dev
@@ -207,6 +213,8 @@ $ kubectl exec -n dev kafka-dev-controller-0 -- grep -i listener /opt/bitnami/ka
 listeners=CONTROLLER://:9093,PLAINTEXT://:9092
 advertised.listeners=PLAINTEXT://kafka-dev-controller-0:9092
 ```
+
+<img width="1512" alt="Screenshot 2025-07-07 at 02 03 48" src="https://github.com/user-attachments/assets/263da4f8-aeea-4122-a472-f3bd61741ec2" />
 
 ## Полезные команды
 
