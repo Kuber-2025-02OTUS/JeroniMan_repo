@@ -1,0 +1,34 @@
+# Production конфигурация для Kafka
+controller:
+  replicaCount: 5
+  persistence:
+    enabled: false  # Отключено для Minikube
+
+# НЕ указываем версию - используем дефолтную из chart
+# image:
+#   tag: ""
+
+# SASL_PLAINTEXT протокол
+listeners:
+  client:
+    protocol: SASL_PLAINTEXT
+  interbroker:
+    protocol: SASL_PLAINTEXT
+
+# Настройки SASL
+sasl:
+  enabled: true
+  client:
+    users:
+      - user1
+    passwords:
+      - password123
+
+# Ресурсы для Minikube (опционально)
+resources:
+  limits:
+    memory: 1Gi
+    cpu: 500m
+  requests:
+    memory: 512Mi
+    cpu: 250m

@@ -1,0 +1,103 @@
+# Количество реплик
+replicaCount: 3
+
+# Настройки образа
+image:
+  repository: python
+  tag: "3.8-alpine"
+  pullPolicy: IfNotPresent
+
+# Настройки сервиса
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+# Настройки Ingress
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: homework.otus
+      paths:
+        - path: /
+          pathType: Prefix
+
+# Настройки init контейнера
+initContainer:
+  enabled: true
+  image:
+    repository: busybox
+    tag: latest
+  downloadUrl: http://info.cern.ch
+
+# Настройки проб
+probes:
+  readiness:
+    enabled: true
+    path: /index.html
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+# Селектор нод
+nodeSelector:
+  homework: "true"
+
+# Ресурсы
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+# Redis
+redis:
+  enabled: false
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: false
+
+# Persistence
+persistence:
+  enabled: true
+  storageClass: "homework-storage"
+  size: 1Gi
+  accessMode: ReadWriteOnce
+
+# ConfigMap data
+configData:
+  app.properties: |
+    server.name=webserver
+    server.port=8000
+    environment=homework
+    course=OTUS Kubernetes 2025-02
+  database.conf: |
+    db.host=localhost
+    db.port=5432
+    db.name=testdb
+  welcome.txt: |
+    Welcome to Kubernetes Volumes homework!
+    This is a ConfigMap example.
+  info.json: |
+    {
+      "app": "webserver",
+      "version": "1.0.0"
+    }
+
+# Security
+serviceAccount:
+  create: true
+  name: monitoring
+  # Включить получение метрик (задание со *)
+  metricsEnabled: true
+
+# StorageClass (задание со *)
+storageClass:
+  create: true
+  name: homework-storage
+  provisioner: k8s.io/minikube-hostpath
+  reclaimPolicy: Retain

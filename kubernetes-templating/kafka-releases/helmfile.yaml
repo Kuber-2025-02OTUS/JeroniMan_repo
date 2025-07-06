@@ -1,0 +1,26 @@
+repositories:
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
+
+releases:
+  # Production Kafka
+  - name: kafka-prod
+    namespace: prod
+    createNamespace: true
+    chart: bitnami/kafka
+    version: "28.0.4"
+    values:
+      - values-prod.yaml  # Ссылка на файл
+    wait: true
+    timeout: 600
+
+  # Development Kafka
+  - name: kafka-dev
+    namespace: dev
+    createNamespace: true
+    chart: bitnami/kafka
+    version: "28.0.4"
+    values:
+      - values-dev.yaml  # Ссылка на файл
+    wait: true
+    timeout: 600
