@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webserver-deployment
+  namespace: homework
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: webserver
+  template:
+    metadata:
+      labels:
+        app: webserver
+    spec:
+      nodeSelector:
+        homework: "true"   # Поды будут запускаться только на нодах с меткой homework=true
+      volumes:
+        # Изменено с emptyDir на PVC
+        - name: shared-data
+          persistentVolumeClaim:
+            claimName: webserver-pvc
+        # Добавлен volume для ConfigMap
+        - name: config-volume
+          configMap:
+            name: webserver-config
+      initContainers:
+        - name: init-container
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              # Скачиваем index.html если его нет
+              if [ ! -f /init/index.html ]; then
+                wget -O /init/index.html http://info.cern.ch
+              fi
+          volumeMounts:
+            - name: shared-data
+              mountPath: /init  # Монтирование PVC в директорию /init
+      containers:
+        - name: webserver-container
+          image: python:3.8-alpine
+          ports:
+            - containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /index.html
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          lifecycle:
+            preStop:
+              exec:
+                command: ["rm", "-f", "/homework/index.html"]
+          command:
+            - sh
+            - -c
+            - |
+              # Копируем index.html если его еще нет
+              if [ ! -f /homework/index.html ]; then
+                cp /init/index.html /homework/index.html 2>/dev/null || true
+              fi
+              # Запускаем веб-сервер на 8000 порту, отдающий содержимое директории /homework
+              python -m http.server 8000 --directory /homework
+          volumeMounts:
+            - name: shared-data
+              mountPath: /homework  # Монтирование PVC
+            - name: config-volume
+              mountPath: /homework/conf  # Монтирование ConfigMap в /homework/conf

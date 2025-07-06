@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: webserver-pvc
+  namespace: homework
+spec:
+  accessModes:
+    - ReadWriteOnce  # Доступ на чтение/запись для одного узла
+  resources:
+    requests:
+      storage: 1Gi   # Запрашиваем 1GB хранилища
+  storageClassName: homework-storage  # Используем наш custom StorageClass для задания со *
