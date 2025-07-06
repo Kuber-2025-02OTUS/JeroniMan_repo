@@ -77,8 +77,11 @@ kubernetes-security/
 
 ## Результаты
 
-<img width="1000" alt="ServiceAccounts" src="screenshot1.png">
-<img width="1000" alt="Metrics endpoint" src="screenshot2.png">
+![Screenshot 2025-07-06 at 20 49 59](https://github.com/user-attachments/assets/cbb4046a-8215-4981-8bbd-31486da9d96c)
+<img width="957" alt="Screenshot 2025-07-06 at 20 50 12" src="https://github.com/user-attachments/assets/67603ecc-2a91-4589-801f-3f4a474df6f8" />
+<img width="1266" alt="Screenshot 2025-07-06 at 20 53 08" src="https://github.com/user-attachments/assets/f91d2ac7-81c5-4066-8e77-fe5e62915604" />
+
+
 
 ## Примечания
 
