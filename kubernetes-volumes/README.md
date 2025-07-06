@@ -87,7 +87,11 @@ curl http://localhost:8000/
 
 ## Скриншоты выполнения
 
-[Здесь добавить скриншоты после выполнения]
+<img width="1039" alt="Screenshot 2025-07-06 at 18 48 49" src="https://github.com/user-attachments/assets/dbbc98be-4a5c-4b57-8830-5e15cbfe7f96" />
+<img width="1512" alt="Screenshot 2025-07-06 at 18 47 08" src="https://github.com/user-attachments/assets/4fff719b-1405-40f1-bf6a-24e0b03931bf" />
+<img width="619" alt="Screenshot 2025-07-06 at 18 48 19" src="https://github.com/user-attachments/assets/0f83b6f1-d7ec-4166-9374-9ba5abd52abb" />
+<img width="471" alt="Screenshot 2025-07-06 at 18 48 27" src="https://github.com/user-attachments/assets/8d944380-b4fe-4749-88c1-a82e727d467c" />
+
 
 ## Результат
 
