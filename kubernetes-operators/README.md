@@ -174,7 +174,7 @@ metadata:
   name: mysql-test-1
   namespace: homework
 spec:
-  image: mysql:5.7
+  image: mysql:8.0
   database: testdb1
   password: password123456
   storage_size: 500Mi
