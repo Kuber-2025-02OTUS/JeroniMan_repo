@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webserver-config
+  namespace: homework
+data:
+  app.properties: |
+    server.name=webserver
+    server.port=8000
+    environment=homework
+    course=OTUS Kubernetes 2025-02
+    storage.type=persistent
+
+  database.conf: |
+    db.host=localhost
+    db.port=5432
+    db.name=testdb
+    db.user=admin
+    db.password=secret
+
+  welcome.txt: |
+    Welcome to Kubernetes Volumes homework!
+    This is a ConfigMap example.
+    Course: Инфраструктурная платформа на основе Kubernetes-2025-02
+
+  info.json: |
+    {
+      "app": "webserver",
+      "version": "1.0.0",
+      "author": "OTUS Student",
+      "description": "Kubernetes volumes homework",
+      "features": [
+        "PersistentVolume",
+        "ConfigMap",
+        "StorageClass"
+      ]
+    }
