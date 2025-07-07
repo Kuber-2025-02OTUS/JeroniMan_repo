@@ -1,0 +1,29 @@
+# Development конфигурация для Kafka
+controller:
+  replicaCount: 1
+  persistence:
+    enabled: false  # Отключено для Minikube
+
+# НЕ указываем версию - используем дефолтную
+# image:
+#   tag: ""
+
+# PLAINTEXT протокол без авторизации
+listeners:
+  client:
+    protocol: PLAINTEXT
+  interbroker:
+    protocol: PLAINTEXT
+
+# Отключаем SASL
+sasl:
+  enabled: false
+
+# Минимальные ресурсы
+resources:
+  limits:
+    memory: 512Mi
+    cpu: 300m
+  requests:
+    memory: 256Mi
+    cpu: 100m

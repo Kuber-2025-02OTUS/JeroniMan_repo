@@ -1,0 +1,47 @@
+==============================================================
+🎉 Спасибо за установку {{ .Chart.Name }}!
+==============================================================
+
+📋 Информация о релизе:
+   Имя релиза: {{ .Release.Name }}
+   Namespace: {{ .Release.Namespace }}
+   Версия Chart: {{ .Chart.Version }}
+
+🌐 Доступ к приложению:
+
+   1. Используйте port-forward для доступа:
+      kubectl port-forward -n {{ .Release.Namespace }} svc/{{ .Release.Name }}-webserver 8000:{{ .Values.service.port }}
+
+   2. Откройте в браузере:
+      http://localhost:8000
+
+📊 Проверка статуса:
+   kubectl get pods -n {{ .Release.Namespace }} -l app=webserver,release={{ .Release.Name }}
+
+{{- if .Values.redis.enabled }}
+
+🔴 Redis установлен!
+   Host: {{ .Release.Name }}-redis-master
+   Port: 6379
+{{- end }}
+
+{{- if .Values.persistence.enabled }}
+
+💾 Persistent Volume включен!
+   PVC: {{ .Release.Name }}-pvc
+   Размер: {{ .Values.persistence.size }}
+{{- end }}
+
+{{- if .Values.serviceAccount.metricsEnabled }}
+
+📊 Доступ к метрикам включен!
+   URL: http://localhost:8000/metrics.html
+{{- end }}
+
+📁 ConfigMap файлы доступны в /conf/:
+   - /conf/app.properties
+   - /conf/database.conf
+   - /conf/welcome.txt
+   - /conf/info.json
+
+==============================================================

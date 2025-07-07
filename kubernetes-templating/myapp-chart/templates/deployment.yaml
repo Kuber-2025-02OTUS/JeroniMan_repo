@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-webserver
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: webserver
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: webserver
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: webserver
+        release: {{ .Release.Name }}
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      volumes:
+        {{- if .Values.persistence.enabled }}
+        - name: shared-data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-pvc
+        {{- else }}
+        - name: shared-data
+          emptyDir: {}
+        {{- end }}
+        - name: config-volume
+          configMap:
+            name: {{ .Release.Name }}-config
+      initContainers:
+        - name: init-container
+          image: "{{ .Values.initContainer.image.repository }}:{{ .Values.initContainer.image.tag }}"
+          command:
+            - sh
+            - -c
+            - |
+              if [ ! -f /init/index.html ]; then
+                wget -O /init/index.html {{ .Values.initContainer.downloadUrl }}
+              fi
+          volumeMounts:
+            - name: shared-data
+              mountPath: /init
+        {{- if and .Values.serviceAccount.create .Values.serviceAccount.metricsEnabled }}
+        # Init container для получения метрик (ДЗ 5)
+        - name: metrics-fetcher
+          image: curlimages/curl:latest
+          command:
+            - sh
+            - -c
+            - |
+              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              CA_CERT=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              APISERVER=https://kubernetes.default.svc
+              curl -s --cacert $CA_CERT --header "Authorization: Bearer $TOKEN" \
+                $APISERVER/metrics > /init/metrics.html || echo "Failed to get metrics" > /init/metrics.html
+          volumeMounts:
+            - name: shared-data
+              mountPath: /init
+        {{- end }}
+      containers:
+        - name: webserver
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+              name: http
+          {{- if .Values.probes.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: {{ .Values.service.targetPort }}
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          {{- end }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["rm", "-f", "/homework/index.html"]
+          command:
+            - sh
+            - -c
+            - |
+              # Копируем index.html если его нет
+              if [ ! -f /homework/index.html ] && [ -f /init/index.html ]; then
+                cp /init/index.html /homework/
+              fi
+              # Копируем metrics.html если есть
+              if [ -f /init/metrics.html ]; then
+                cp /init/metrics.html /homework/
+              fi
+              # Запускаем веб-сервер
+              python -m http.server {{ .Values.service.targetPort }} --directory /homework
+          volumeMounts:
+            - name: shared-data
+              mountPath: /homework
+            - name: config-volume
+              mountPath: /homework/conf
+          {{- if .Values.resources }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- end }}
