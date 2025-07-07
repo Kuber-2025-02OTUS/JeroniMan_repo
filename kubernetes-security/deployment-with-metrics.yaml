@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webserver-deployment
+  namespace: homework
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: webserver
+  template:
+    metadata:
+      labels:
+        app: webserver
+    spec:
+      serviceAccountName: monitoring
+      nodeSelector:
+        homework: "true"
+      volumes:
+        - name: shared-data
+          emptyDir: {}
+      initContainers:
+        - name: init-container
+          image: busybox:latest
+          command:
+            - wget
+            - "-O"
+            - "/init/index.html"
+            - http://info.cern.ch
+          volumeMounts:
+            - name: shared-data
+              mountPath: /init
+        # Новый init контейнер для получения метрик
+        - name: metrics-fetcher
+          image: curlimages/curl:latest
+          command:
+            - sh
+            - -c
+            - |
+              # Получаем токен ServiceAccount
+              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              # Получаем CA сертификат
+              CA_CERT=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              # Определяем API сервер
+              APISERVER=https://kubernetes.default.svc
+              # Получаем метрики
+              curl -s --cacert $CA_CERT --header "Authorization: Bearer $TOKEN" \
+                $APISERVER/metrics > /init/metrics.html || echo "Failed to get metrics" > /init/metrics.html
+          volumeMounts:
+            - name: shared-data
+              mountPath: /init
+      containers:
+        - name: webserver-container
+          image: python:3.8-alpine
+          ports:
+            - containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /index.html
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          lifecycle:
+            preStop:
+              exec:
+                command: ["rm", "-f", "/homework/index.html"]
+          command:
+            - sh
+            - -c
+            - |
+              # Копируем metrics.html если он существует
+              if [ -f /homework/metrics.html ]; then
+                echo "Metrics file found"
+              else
+                echo "No metrics file found, creating placeholder"
+                echo "<h1>Metrics not available</h1>" > /homework/metrics.html
+              fi
+              # Запускаем веб-сервер
+              python -m http.server 8000 --directory /homework
+          volumeMounts:
+            - name: shared-data
+              mountPath: /homework
