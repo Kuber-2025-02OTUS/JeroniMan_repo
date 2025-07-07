@@ -68,6 +68,9 @@ chmod +x apply.sh
 
 ## Проверка работоспособности
 
+<img width="1510" alt="Screenshot 2025-07-08 at 00 42 32" src="https://github.com/user-attachments/assets/ddce5c72-3107-41ff-8636-46d9e1305876" />
+
+
 ### Проверка метрик nginx
 
 ```bash
