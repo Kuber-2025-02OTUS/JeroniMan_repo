@@ -1,0 +1,214 @@
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: homework
+---
+# ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mysql-operator
+  namespace: homework
+---
+# ClusterRole с полными правами
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mysql-operator
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+---
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mysql-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mysql-operator
+subjects:
+- kind: ServiceAccount
+  name: mysql-operator
+  namespace: homework
+---
+# Deployment с простым оператором на Python
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-operator
+  namespace: homework
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-operator
+  template:
+    metadata:
+      labels:
+        app: mysql-operator
+    spec:
+      serviceAccountName: mysql-operator
+      containers:
+      - name: mysql-operator
+        image: python:3.9-alpine
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - |
+          apk add --no-cache gcc musl-dev libffi-dev openssl-dev python3-dev
+          pip install kopf kubernetes
+          cat > /app.py << 'SCRIPT'
+          import kopf
+          import kubernetes
+          import logging
+          
+          logging.basicConfig(level=logging.INFO)
+          logger = logging.getLogger(__name__)
+          
+          kubernetes.config.load_incluster_config()
+          k8s_apps = kubernetes.client.AppsV1Api()
+          k8s_core = kubernetes.client.CoreV1Api()
+          
+          @kopf.on.create('otus.homework', 'v1', 'mysqls')
+          def create_mysql(spec, name, namespace, **kwargs):
+              logger.info(f"Creating MySQL {name} in namespace {namespace}")
+              
+              # Deployment
+              deployment = kubernetes.client.V1Deployment(
+                  metadata=kubernetes.client.V1ObjectMeta(
+                      name=f"{name}-mysql",
+                      namespace=namespace,
+                      labels={"app": "mysql", "mysql": name}
+                  ),
+                  spec=kubernetes.client.V1DeploymentSpec(
+                      replicas=1,
+                      selector=kubernetes.client.V1LabelSelector(
+                          match_labels={"app": "mysql", "mysql": name}
+                      ),
+                      template=kubernetes.client.V1PodTemplateSpec(
+                          metadata=kubernetes.client.V1ObjectMeta(
+                              labels={"app": "mysql", "mysql": name}
+                          ),
+                          spec=kubernetes.client.V1PodSpec(
+                              containers=[
+                                  kubernetes.client.V1Container(
+                                      name="mysql",
+                                      image=spec.get('image', 'mysql:8.0'),
+                                      env=[
+                                          kubernetes.client.V1EnvVar(
+                                              name="MYSQL_ROOT_PASSWORD",
+                                              value=spec.get('password')
+                                          ),
+                                          kubernetes.client.V1EnvVar(
+                                              name="MYSQL_DATABASE",
+                                              value=spec.get('database')
+                                          )
+                                      ],
+                                      ports=[
+                                          kubernetes.client.V1ContainerPort(container_port=3306)
+                                      ]
+                                  )
+                              ]
+                          )
+                      )
+                  )
+              )
+              
+              # Service
+              service = kubernetes.client.V1Service(
+                  metadata=kubernetes.client.V1ObjectMeta(
+                      name=f"{name}-mysql",
+                      namespace=namespace,
+                      labels={"app": "mysql", "mysql": name}
+                  ),
+                  spec=kubernetes.client.V1ServiceSpec(
+                      selector={"app": "mysql", "mysql": name},
+                      ports=[
+                          kubernetes.client.V1ServicePort(
+                              port=3306,
+                              target_port=3306
+                          )
+                      ],
+                      type="ClusterIP"
+                  )
+              )
+              
+              # PVC
+              pvc = kubernetes.client.V1PersistentVolumeClaim(
+                  metadata=kubernetes.client.V1ObjectMeta(
+                      name=f"{name}-mysql-pvc",
+                      namespace=namespace
+                  ),
+                  spec=kubernetes.client.V1PersistentVolumeClaimSpec(
+                      access_modes=["ReadWriteOnce"],
+                      resources=kubernetes.client.V1ResourceRequirements(
+                          requests={"storage": spec.get('storage_size', '1Gi')}
+                      )
+                  )
+              )
+              
+              # PV
+              pv = kubernetes.client.V1PersistentVolume(
+                  metadata=kubernetes.client.V1ObjectMeta(
+                      name=f"{name}-mysql-pv",
+                      labels={"app": "mysql", "mysql": name}
+                  ),
+                  spec=kubernetes.client.V1PersistentVolumeSpec(
+                      capacity={"storage": spec.get('storage_size', '1Gi')},
+                      access_modes=["ReadWriteOnce"],
+                      persistent_volume_reclaim_policy="Delete",
+                      host_path=kubernetes.client.V1HostPathVolumeSource(
+                          path=f"/data/{name}"
+                      )
+                  )
+              )
+              
+              try:
+                  k8s_core.create_persistent_volume(body=pv)
+                  logger.info(f"Created PV {name}-mysql-pv")
+              except Exception as e:
+                  logger.error(f"Failed to create PV: {e}")
+                  
+              try:
+                  k8s_core.create_namespaced_persistent_volume_claim(namespace=namespace, body=pvc)
+                  logger.info(f"Created PVC {name}-mysql-pvc")
+              except Exception as e:
+                  logger.error(f"Failed to create PVC: {e}")
+                  
+              try:
+                  k8s_apps.create_namespaced_deployment(namespace=namespace, body=deployment)
+                  logger.info(f"Created Deployment {name}-mysql")
+              except Exception as e:
+                  logger.error(f"Failed to create Deployment: {e}")
+                  
+              try:
+                  k8s_core.create_namespaced_service(namespace=namespace, body=service)
+                  logger.info(f"Created Service {name}-mysql")
+              except Exception as e:
+                  logger.error(f"Failed to create Service: {e}")
+              
+              return {'message': 'MySQL created'}
+          
+          @kopf.on.delete('otus.homework', 'v1', 'mysqls')
+          def delete_mysql(name, namespace, **kwargs):
+              logger.info(f"Deleting MySQL {name} from namespace {namespace}")
+              
+              try:
+                  k8s_apps.delete_namespaced_deployment(name=f"{name}-mysql", namespace=namespace)
+                  k8s_core.delete_namespaced_service(name=f"{name}-mysql", namespace=namespace)
+                  k8s_core.delete_namespaced_persistent_volume_claim(name=f"{name}-mysql-pvc", namespace=namespace)
+                  k8s_core.delete_persistent_volume(name=f"{name}-mysql-pv")
+              except Exception as e:
+                  logger.error(f"Error during deletion: {e}")
+          
+          kopf.run()
+          SCRIPT
+          python /app.py
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"
