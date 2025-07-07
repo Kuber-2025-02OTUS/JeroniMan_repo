@@ -1,10 +1,4 @@
 ---
-# Namespace
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: homework
----
 # ServiceAccount
 apiVersion: v1
 kind: ServiceAccount
