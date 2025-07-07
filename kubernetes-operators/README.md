@@ -27,16 +27,11 @@
 kubernetes-operators/
 ├── README.md
 ├── deploy/
-│   ├── namespace.yaml              # Namespace homework
+│   ├── namespace.yaml                   
 │   ├── crd.yaml                   # CustomResourceDefinition для MySQL
-│   ├── service-account.yaml       # ServiceAccount
-│   ├── role.yaml                  # ClusterRole с полными правами
-│   ├── role-binding.yaml          # ClusterRoleBinding
-│   ├── operator.yaml              # Deployment оператора (готовый образ)
 │   ├── deploy-all-homework.yaml   # Все ресурсы для homework namespace
-│   └── operator-fixed.yaml        # Deployment с кастомным оператором
 ├── deploy-minimal/
-│   └── role-minimal-namespace.yaml # Минимальные права (Role + ClusterRole)
+│   └── role-minimal.yaml # Минимальные права (Role + ClusterRole)
 ├── test/
 │   ├── mysql-sample.yaml          # Пример MySQL ресурса
 │   └── test-all.sh               # Скрипт для проверки всех заданий
@@ -57,12 +52,6 @@ kubectl apply -f deploy/crd.yaml
 
 # 3. Применяем все компоненты в namespace homework
 kubectl apply -f deploy/deploy-all-homework.yaml
-
-# Или по отдельности:
-# kubectl apply -f deploy/service-account.yaml
-# kubectl apply -f deploy/role.yaml
-# kubectl apply -f deploy/role-binding.yaml
-# kubectl apply -f deploy/operator-fixed.yaml
 
 # 4. Проверяем что оператор запустился
 kubectl get pods -n homework
@@ -104,7 +93,7 @@ kubectl get pv | grep mysql-instance
 
 ### Минимальный набор прав:
 
-Создан файл `deploy-minimal/role-minimal-namespace.yaml` с минимальными правами:
+Создан файл `deploy-minimal/role-minimal.yaml` с минимальными правами:
 - **Role** в namespace homework для управления namespace-ресурсами:
   - CRD `mysqls.otus.homework`
   - Deployments
@@ -121,7 +110,7 @@ kubectl get pv | grep mysql-instance
 kubectl delete clusterrolebinding mysql-operator
 
 # 2. Применяем минимальные права
-kubectl apply -f deploy-minimal/role-minimal-namespace.yaml
+kubectl apply -f deploy-minimal/role-minimal.yaml
 
 # 3. Проверяем созданные роли
 kubectl get role mysql-operator-minimal -n homework
@@ -135,12 +124,22 @@ kubectl apply -f test/mysql-sample.yaml
 kubectl get mysqls -n homework
 kubectl get deploy,svc,pvc -n homework
 
-# 6. Проверяем что оператор НЕ может создавать ресурсы вне своих прав
-kubectl exec -n homework deployment/mysql-operator -- kubectl auth can-i create configmaps
-# Должно быть: yes (в своем namespace)
+# 6. Проверяем права от имени ServiceAccount
+kubectl auth can-i --list --as=system:serviceaccount:homework:mysql-operator -n homework
 
-kubectl exec -n homework deployment/mysql-operator -- kubectl auth can-i create deployments -n default
-# Должно быть: no (в другом namespace)
+# 6.1 Проверяем конкретные права
+kubectl auth can-i create deployments --as=system:serviceaccount:homework:mysql-operator -n homework
+kubectl auth can-i create services --as=system:serviceaccount:homework:mysql-operator -n homework
+kubectl auth can-i create persistentvolumeclaims --as=system:serviceaccount:homework:mysql-operator -n homework
+kubectl auth can-i create persistentvolumes --as=system:serviceaccount:homework:mysql-operator
+
+# 6.2 Проверяем права на MySQL CRD
+kubectl auth can-i list mysqls.otus.homework --as=system:serviceaccount:homework:mysql-operator
+kubectl auth can-i create mysqls.otus.homework --as=system:serviceaccount:homework:mysql-operator -n homework
+
+# 6.3 Проверяем что НЕ может делать (для подтверждения минимальных прав)
+kubectl auth can-i create pods --as=system:serviceaccount:homework:mysql-operator -n homework
+kubectl auth can-i create deployments --as=system:serviceaccount:homework:mysql-operator -n default
 ```
 
 ## Задание со ** (свой оператор)
@@ -224,16 +223,25 @@ chmod +x test/test-all.sh
 - Оператор работает в namespace homework
 - При создании MySQL создаются все ресурсы (Deployment, Service, PV, PVC)
 - При удалении MySQL все ресурсы корректно удаляются
+<img width="884" alt="Screenshot 2025-07-07 at 22 09 22" src="https://github.com/user-attachments/assets/c33c82bd-43e3-4885-ad3d-50c73f60fae5" />
+<img width="545" alt="Screenshot 2025-07-07 at 22 38 20" src="https://github.com/user-attachments/assets/b6aa1596-fa68-43a0-b52c-2013b93e34b4" />
+<img width="1412" alt="Screenshot 2025-07-07 at 22 40 42" src="https://github.com/user-attachments/assets/6fa67632-914f-46f2-9655-e094acf68a8b" />
+<img width="1263" alt="Screenshot 2025-07-07 at 22 41 43" src="https://github.com/user-attachments/assets/fcd83e14-9a12-4586-9a98-0df5b4b2db2d" />
 
 ### Задание со * ✅
 - Создан набор минимальных прав (Role + ClusterRole)
 - Оператор успешно работает с ограниченными правами
 - Права ограничены namespace homework (кроме PV)
+<img width="1370" alt="Screenshot 2025-07-07 at 22 56 28" src="https://github.com/user-attachments/assets/f38fb9b5-1361-4405-9e05-874b79500fd1" />
+
 
 ### Задание со ** ✅
 - Создан собственный оператор на Python с использованием kopf
 - Код оператора встроен в deployment для простоты
 - Оператор корректно обрабатывает жизненный цикл MySQL ресурсов
+<img width="1260" alt="Screenshot 2025-07-07 at 22 55 19" src="https://github.com/user-attachments/assets/78857498-3ebd-4c04-b06a-ef5d5d6532f6" />
+<img width="1395" alt="Screenshot 2025-07-07 at 22 57 17" src="https://github.com/user-attachments/assets/ab7a83bc-8d1b-491c-bee9-ed7a42ca984b" />
+
 
 ## Примечания:
 
