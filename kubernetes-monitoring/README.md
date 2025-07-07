@@ -79,6 +79,9 @@ kubectl exec -n monitoring deployment/nginx-monitoring -c nginx -- \
 kubectl port-forward -n monitoring svc/nginx-monitoring 9113:9113
 curl http://localhost:9113/metrics | grep nginx_
 ```
+<img width="873" alt="Screenshot 2025-07-08 at 00 39 44" src="https://github.com/user-attachments/assets/16164816-3976-432c-a16b-0749392c8873" />
+<img width="1017" alt="Screenshot 2025-07-08 at 00 40 10" src="https://github.com/user-attachments/assets/cd4488d1-e628-4da1-a208-aa944d4645c7" />
+
 
 ### Проверка в Prometheus
 
@@ -86,6 +89,7 @@ curl http://localhost:9113/metrics | grep nginx_
 # Доступ к Prometheus
 kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
 ```
+<img width="1511" alt="Screenshot 2025-07-08 at 00 40 36" src="https://github.com/user-attachments/assets/57d38bee-3e3d-45da-935e-50cc90c3301a" />
 
 Откройте http://localhost:9090 и выполните запросы:
 - `nginx_up` - статус доступности nginx
