@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-monitoring
+  namespace: monitoring
+  labels:
+    app: nginx-monitoring
+    monitoring: "true"  # Метка для ServiceMonitor
+spec:
+  type: ClusterIP
+  selector:
+    app: nginx-monitoring
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+    protocol: TCP
+  - name: metrics
+    port: 9113
+    targetPort: metrics
+    protocol: TCP

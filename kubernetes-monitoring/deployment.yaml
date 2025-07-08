@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-monitoring
+  namespace: monitoring
+  labels:
+    app: nginx-monitoring
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-monitoring
+  template:
+    metadata:
+      labels:
+        app: nginx-monitoring
+    spec:
+      containers:
+      # Основной контейнер nginx
+      - name: nginx
+        image: nginx-custom:latest
+        imagePullPolicy: Never  # Использовать локальный образ
+        ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP
+        - name: stub-status
+          containerPort: 8080
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+
+      # Sidecar контейнер nginx-exporter
+      # Может быть запущен как отдельным подом, так и в составе пода с nginx
+      # В данном случае выбран вариант sidecar для упрощения конфигурации
+      - name: nginx-exporter
+        image: nginx/nginx-prometheus-exporter:1.1.0
+        args:
+          - -nginx.scrape-uri=http://localhost:8080/stub_status
+        ports:
+        - name: metrics
+          containerPort: 9113
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
