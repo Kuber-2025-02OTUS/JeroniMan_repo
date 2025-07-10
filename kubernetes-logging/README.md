@@ -272,3 +272,13 @@ kubectl get cm loki-config -n loki-stack -o yaml | grep -A10 s3:
 ## Автор
 
 Выполнено в рамках курса "Инфраструктурная платформа на основе Kubernetes-2025-02" OTUS
+
+
+## Результаты
+<img width="1644" height="1172" alt="Screenshot 2025-07-11 at 00 45 24" src="https://github.com/user-attachments/assets/5de70ae8-5522-457e-b1cb-2f4ac9ba00c9" />
+<img width="1646" height="1286" alt="Screenshot 2025-07-11 at 00 45 09" src="https://github.com/user-attachments/assets/ac5d1df9-e246-4aaa-bdc7-98aa24644681" />
+<img width="1424" height="417" alt="Screenshot 2025-07-11 at 00 37 17" src="https://github.com/user-attachments/assets/17126e54-30b0-413c-9545-2cb33226fa7a" />
+<img width="1112" height="329" alt="Screenshot 2025-07-11 at 00 36 07" src="https://github.com/user-attachments/assets/1c14cfa5-879c-41a7-ba30-9a56a57afab7" />
+<img width="1644" height="1358" alt="Screenshot 2025-07-11 at 00 35 58" src="https://github.com/user-attachments/assets/2afb3662-31e9-4876-8254-6b11696a0cf6" />
+<img width="1642" height="1359" alt="Screenshot 2025-07-11 at 00 35 49" src="https://github.com/user-attachments/assets/d5e3825a-14a9-4f4a-a359-ec7eb1c02714" />
+
