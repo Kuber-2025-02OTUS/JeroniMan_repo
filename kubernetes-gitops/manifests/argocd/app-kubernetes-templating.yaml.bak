@@ -1,0 +1,59 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubernetes-templating
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Проект OTUS
+  project: otus
+
+  # Источник - ваш Helm chart
+  source:
+    repoURL: https://github.com/Kuber-2025-02OTUS/JeroniMan_repo  # ЗАМЕНИТЕ на ваш репозиторий
+    targetRevision: HEAD
+    path: kubernetes-templating/myapp-chart  # Путь к вашему Helm chart
+
+    # Helm параметры
+    helm:
+      # Переопределяем количество реплик
+      parameters:
+      - name: replicaCount
+        value: "2"  # Переопределяем значение из values.yaml
+
+      # Или можно использовать values
+      values: |
+        replicaCount: 2
+        persistence:
+          enabled: true
+        serviceAccount:
+          create: true
+          metricsEnabled: true
+
+  # Destination - текущий кластер, namespace homeworkhelm
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: homeworkhelm  # Отличный от первого приложения namespace
+
+  # Auto sync policy с Prune и AutoHeal
+  syncPolicy:
+    automated:
+      prune: true      # Удалять ресурсы, которых нет в Git
+      selfHeal: true   # Автоматически исправлять drift
+      allowEmpty: false
+
+    syncOptions:
+    - CreateNamespace=true  # Создать namespace если его нет
+    - ApplyOutOfSyncOnly=true
+    - PrunePropagationPolicy=foreground
+
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # История ревизий
+  revisionHistoryLimit: 10

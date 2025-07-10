@@ -1,0 +1,8 @@
+# Игнорируем файлы с секретами
+values-loki-s3-override.yaml
+*-generated.yaml
+
+# Игнорируем скачанные чарты
+loki/
+kube-prometheus-stack/
+loki-stack/

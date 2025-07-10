@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubernetes-networks
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Проект OTUS
+  project: otus
+
+  # Источник - ваш репозиторий
+  source:
+    repoURL: https://github.com/Kuber-2025-02OTUS/JeroniMan_repo  # ЗАМЕНИТЕ на ваш репозиторий
+    targetRevision: HEAD
+    path: kubernetes-networks  # Путь к директории с манифестами
+
+  # Destination - текущий кластер, namespace homework
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: homework
+
+  # Manual sync policy
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=true  # Создать namespace если его нет
+    - ApplyOutOfSyncOnly=true
+    - PrunePropagationPolicy=foreground
+
+    # Manual sync - НЕ автоматическая синхронизация
+    # automated раздел НЕ указываем для manual режима
+
+  # Проверка здоровья ресурсов
+  revisionHistoryLimit: 10

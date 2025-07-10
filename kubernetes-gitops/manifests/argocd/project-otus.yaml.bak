@@ -1,0 +1,51 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: otus
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: OTUS Kubernetes course project
+
+  # Источники - ваш репозиторий с ДЗ
+  sourceRepos:
+  - 'https://github.com/Kuber-2025-02OTUS/JeroniMan_repo'
+
+  # Destination - текущий кластер
+  destinations:
+  - namespace: '*'
+    server: https://kubernetes.default.svc
+    name: in-cluster
+
+  # Разрешенные namespace patterns
+  namespaceResourceWhitelist:
+  - group: '*'
+    kind: '*'
+
+  # Разрешенные cluster-scoped ресурсы
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+
+  # Роли проекта
+  roles:
+  - name: admin
+    policies:
+    - p, proj:otus:admin, applications, *, otus/*, allow
+    - p, proj:otus:admin, repositories, *, *, allow
+    groups:
+    - argocd-admins
+
+  - name: developer
+    policies:
+    - p, proj:otus:developer, applications, get, otus/*, allow
+    - p, proj:otus:developer, applications, sync, otus/*, allow
+
+  # Разрешаем создавать namespace если его нет
+  syncWindows:
+  - kind: allow
+    schedule: '* * * * *'
+    duration: 24h
+    applications:
+    - '*'
