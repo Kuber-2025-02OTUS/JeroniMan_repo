@@ -1,0 +1,242 @@
+# kube-prometheus-stack values for Yandex Cloud Managed Kubernetes
+
+# Глобальные настройки
+global:
+  rbac:
+    create: true
+    createAggregateClusterRoles: false
+
+# Prometheus Operator
+prometheusOperator:
+  nodeSelector:
+    node-role: infra
+  tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+  resources:
+    limits:
+      memory: 400Mi
+    requests:
+      cpu: 100m
+      memory: 200Mi
+
+# Prometheus
+prometheus:
+  prometheusSpec:
+    nodeSelector:
+      node-role: infra
+    tolerations:
+    - key: node-role
+      operator: Equal
+      value: infra
+      effect: NoSchedule
+
+    # Ресурсы
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: 500m
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+
+    # Хранилище
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+
+    # Retention
+    retention: 7d
+    retentionSize: "19GB"
+
+    # Service Monitors
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+
+    # Добавляем Loki как remote write target (опционально)
+    # remoteWrite:
+    # - url: http://loki-loki-distributed-distributor:3100/loki/api/v1/push
+
+# Grafana
+grafana:
+  enabled: true
+
+  nodeSelector:
+    node-role: infra
+  tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+  # Admin credentials
+  adminUser: admin
+  adminPassword: prom-operator
+
+  # Ресурсы
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  # Persistence
+  persistence:
+    enabled: true
+    size: 5Gi
+
+  # Настройка datasources
+  additionalDataSources:
+  - name: Loki
+    type: loki
+    url: http://loki-loki-distributed-gateway.loki-stack.svc.cluster.local
+    access: proxy
+    isDefault: false
+    jsonData:
+      maxLines: 1000
+
+  # Дашборды
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'loki'
+        orgId: 1
+        folder: 'Loki'
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/loki
+
+  dashboards:
+    loki:
+      loki-dashboard:
+        url: https://raw.githubusercontent.com/grafana/loki/main/production/helm/loki/src/dashboards/loki-logs.json
+        datasource: Loki
+
+# AlertManager
+alertmanager:
+  alertmanagerSpec:
+    nodeSelector:
+      node-role: infra
+    tolerations:
+    - key: node-role
+      operator: Equal
+      value: infra
+      effect: NoSchedule
+
+    resources:
+      requests:
+        memory: 100Mi
+        cpu: 50m
+      limits:
+        memory: 200Mi
+        cpu: 100m
+
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+
+# Kube State Metrics
+kube-state-metrics:
+  nodeSelector:
+    node-role: infra
+  tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+# Node Exporter (запускается на всех нодах)
+nodeExporter:
+  enabled: true
+
+  tolerations:
+  - effect: NoSchedule
+    operator: Exists
+  - effect: NoExecute
+    operator: Exists
+
+  resources:
+    limits:
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Отключаем компоненты, которые не работают в Managed K8s
+kubeEtcd:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+kubeControllerManager:
+  enabled: false
+
+# Настройки правил алертинга
+defaultRules:
+  create: true
+  rules:
+    alertmanager: true
+    etcd: false  # Отключено для Managed K8s
+    configReloaders: true
+    general: true
+    k8s: true
+    kubeApiserverAvailability: true
+    kubeApiserverBurnrate: true
+    kubeApiserverHistogram: true
+    kubeApiserverSlos: true
+    kubeControllerManager: false  # Отключено для Managed K8s
+    kubeProxy: true
+    kubePrometheusGeneral: true
+    kubePrometheusNodeRecording: true
+    kubeScheduler: false  # Отключено для Managed K8s
+    kubeStateMetrics: true
+    kubelet: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    network: true
+    node: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    prometheus: true
+    prometheusOperator: true
+
+# Service Monitors для Loki (если нужно)
+additionalServiceMonitors:
+- name: loki-monitor
+  namespace: loki-stack
+  namespaceSelector:
+    matchNames:
+    - loki-stack
+  selector:
+    matchLabels:
+      monitoring: "true"
+  endpoints:
+  - port: http-metrics
+    interval: 30s
+    path: /metrics

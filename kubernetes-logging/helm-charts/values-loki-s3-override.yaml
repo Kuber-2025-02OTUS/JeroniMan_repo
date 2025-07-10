@@ -1,0 +1,8 @@
+# Этот файл будет сгенерирован скриптом с актуальными S3 credentials
+# НЕ коммитьте его в git!
+loki:
+  storage:
+    s3:
+      bucketnames: ${BUCKET_NAME}
+      access_key_id: ${AWS_ACCESS_KEY_ID}
+      secret_access_key: ${AWS_SECRET_ACCESS_KEY}

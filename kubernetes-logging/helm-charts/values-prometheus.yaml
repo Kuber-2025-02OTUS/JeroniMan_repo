@@ -1,0 +1,48 @@
+prometheus:
+  prometheusSpec:
+    nodeSelector:
+      node-role: infra
+    tolerations:
+    - key: node-role
+      operator: Equal
+      value: infra
+      effect: NoSchedule
+
+    # Ресурсы для Prometheus
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 250m
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+
+grafana:
+  enabled: false  # Уже включена в loki-stack
+
+alertmanager:
+  alertmanagerSpec:
+    nodeSelector:
+      node-role: infra
+    tolerations:
+    - key: node-role
+      operator: Equal
+      value: infra
+      effect: NoSchedule
+
+    # Ресурсы для AlertManager
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 200m
+
+# Отключаем компоненты, которые не нужны
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
