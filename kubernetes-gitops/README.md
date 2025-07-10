@@ -1,4 +1,5 @@
-                       # Kubernetes GitOps with ArgoCD
+## Результат
+<img width="1150" height="903" alt="Screenshot 2025-07-11 at 02 12 26" src="https://github.com/user-attachments/assets/f6d9049e-daf9-41e1-90f0-37f33f601c76" />
 
 ## Описание
 
