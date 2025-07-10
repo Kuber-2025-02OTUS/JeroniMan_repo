@@ -1,0 +1,154 @@
+# Fixed ArgoCD Helm values for Yandex Cloud Managed Kubernetes
+
+# Глобальные настройки
+global:
+  domain: argocd.local
+
+  # Все компоненты на infra нодах
+  nodeSelector:
+    node-role: infra
+  tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+# Redis - упрощенная конфигурация
+redis:
+  enabled: true
+
+  # Используем стандартный Redis вместо HA версии
+  architecture: standalone
+
+  # Отключаем аутентификацию для упрощения
+  auth:
+    enabled: false
+
+  master:
+    nodeSelector:
+      node-role: infra
+    tolerations:
+    - key: node-role
+      operator: Equal
+      value: infra
+      effect: NoSchedule
+
+    # Отключаем persistence для учебных целей
+    persistence:
+      enabled: false
+
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+# Отключаем Redis HA
+redis-ha:
+  enabled: false
+
+# Server
+server:
+  nodeSelector:
+    node-role: infra
+  tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  # Отключаем TLS для упрощения
+  extraArgs:
+    - --insecure
+
+  ingress:
+    enabled: false
+
+  config:
+    url: "http://argocd-server.argocd.svc.cluster.local"
+
+# Repo Server
+repoServer:
+  nodeSelector:
+    node-role: infra
+  tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+  resources:
+    limits:
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Application Controller
+controller:
+  nodeSelector:
+    node-role: infra
+  tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+  resources:
+    limits:
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+# ApplicationSet Controller
+applicationSet:
+  enabled: true
+  nodeSelector:
+    node-role: infra
+  tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Notifications Controller - отключаем
+notifications:
+  enabled: false
+
+# Dex - отключаем
+dex:
+  enabled: false
+
+# Параметры конфигурации
+configs:
+  params:
+    server.insecure: true
+
+  rbac:
+    policy.default: role:readonly
+    policy.csv: |
+      p, role:admin, applications, *, */*, allow
+      p, role:admin, clusters, *, *, allow
+      p, role:admin, repositories, *, *, allow
+      g, argocd-admins, role:admin
+
+# CRDs
+crds:
+  install: true
+  keep: true

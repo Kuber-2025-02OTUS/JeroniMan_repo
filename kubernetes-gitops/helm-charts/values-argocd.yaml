@@ -1,0 +1,202 @@
+# ArgoCD Helm values for Yandex Cloud Managed Kubernetes
+
+# Глобальные настройки
+global:
+  # Домен для Ingress (опционально)
+  domain: argocd.local
+
+  # Настройки образов для работы через NAT
+  image:
+    repository: quay.io/argoproj/argocd
+    tag: v2.11.0
+    imagePullPolicy: IfNotPresent
+
+# Redis
+redis:
+  enabled: true
+
+  # Размещение на infra нодах
+  nodeSelector:
+    node-role: infra
+  tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Server
+server:
+  # Размещение на infra нодах
+  nodeSelector:
+    node-role: infra
+  tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+  # Ресурсы
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  # Автоскейлинг
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+
+  # Ingress (опционально)
+  ingress:
+    enabled: false
+    ingressClassName: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    hosts:
+      - argocd.local
+    paths:
+      - /
+    tls: []
+
+  # Конфигурация
+  config:
+    # URL для доступа (если используете Ingress)
+    url: "https://argocd.local"
+
+    # Repositories (примеры)
+    repositories: |
+      - url: https://github.com/argoproj/argocd-example-apps
+        name: example-apps
+        type: git
+
+  # Extra args для сервера
+  extraArgs:
+    - --insecure  # Отключаем внутренний TLS для упрощения
+
+# Repo Server
+repoServer:
+  # Размещение на infra нодах
+  nodeSelector:
+    node-role: infra
+  tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+  # Ресурсы
+  resources:
+    limits:
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  # Автоскейлинг
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+
+# ApplicationSet Controller
+applicationSet:
+  enabled: true
+
+  # Размещение на infra нодах
+  nodeSelector:
+    node-role: infra
+  tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Controller
+controller:
+  # Размещение на infra нодах
+  nodeSelector:
+    node-role: infra
+  tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+  # Ресурсы
+  resources:
+    limits:
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+  # Метрики
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      namespace: argocd
+      additionalLabels:
+        release: prometheus
+
+# Dex (OIDC провайдер) - отключаем для простоты
+dex:
+  enabled: false
+
+# Notifications
+notifications:
+  enabled: false
+
+# Параметры безопасности
+configs:
+  params:
+    # Отключаем обязательное использование HTTPS для упрощения
+    server.insecure: true
+
+    # Таймауты
+    controller.operation.processors: "10"
+    controller.status.processors: "20"
+    controller.self.heal.timeout.seconds: "5"
+
+    # Ресинхронизация каждые 3 минуты
+    timeout.reconciliation: "180s"
+
+    # Логирование
+    server.log.level: "info"
+    controller.log.level: "info"
+    reposerver.log.level: "info"
+
+  # RBAC политики (базовые)
+  rbac:
+    policy.default: role:readonly
+    policy.csv: |
+      p, role:admin, applications, *, */*, allow
+      p, role:admin, clusters, *, *, allow
+      p, role:admin, repositories, *, *, allow
+      p, role:admin, logs, get, *, allow
+      p, role:admin, exec, create, */*, allow
+      g, argocd-admins, role:admin
+
+# Redis-HA (высокая доступность) - отключено для простоты
+redis-ha:
+  enabled: false
