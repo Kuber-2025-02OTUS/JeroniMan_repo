@@ -1,0 +1,66 @@
+# consul-values.yaml
+# Конфигурация для установки Consul в HA режиме
+
+global:
+  name: consul
+  datacenter: dc1
+
+server:
+  # 3 реплики для HA режима как требуется в задании
+  replicas: 3
+  bootstrapExpect: 3
+
+  # Ресурсы для серверов
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+  # Хранилище для данных
+  storage: 10Gi
+  storageClass: yc-network-ssd
+
+  # Affinity для распределения по разным нодам
+  affinity: |
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app: {{ template "consul.name" . }}
+              release: "{{ .Release.Name }}"
+              component: server
+          topologyKey: kubernetes.io/hostname
+
+# UI для удобства
+ui:
+  enabled: true
+  service:
+    type: LoadBalancer
+
+# Connect для service mesh (может пригодиться)
+connectInject:
+  enabled: false
+
+# DNS
+dns:
+  enabled: true
+
+# Клиенты Consul (агенты на каждой ноде)
+client:
+  enabled: true
+  grpc: true
+
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+# Синхронизация сервисов
+syncCatalog:
+  enabled: false

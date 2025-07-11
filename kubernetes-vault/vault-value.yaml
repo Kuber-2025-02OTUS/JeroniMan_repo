@@ -1,0 +1,78 @@
+# vault-values.yaml
+# Конфигурация Vault для работы с Consul в HA режиме
+
+global:
+  enabled: true
+  namespace: vault
+
+injector:
+  enabled: true
+
+server:
+  # HA режим с использованием Consul
+  ha:
+    enabled: true
+    replicas: 3
+
+    # Конфигурация Raft storage (альтернатива Consul)
+    raft:
+      enabled: false
+
+    config: |
+      ui = true
+      
+      listener "tcp" {
+        tls_disable = 1
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+      }
+      
+      # Используем Consul как backend для HA
+      storage "consul" {
+        path = "vault"
+        address = "consul-server.consul.svc.cluster.local:8500"
+      }
+      
+      service_registration "kubernetes" {}
+
+  # Ресурсы
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
+  # Affinity для распределения по нодам
+  affinity: |
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ template "vault.name" . }}
+              app.kubernetes.io/instance: "{{ .Release.Name }}"
+              component: server
+          topologyKey: kubernetes.io/hostname
+
+  # Service configuration
+  service:
+    enabled: true
+    type: LoadBalancer
+
+  # Data storage
+  dataStorage:
+    enabled: true
+    size: 10Gi
+    storageClass: yc-network-ssd
+
+  # Audit storage
+  auditStorage:
+    enabled: true
+    size: 10Gi
+    storageClass: yc-network-ssd
+
+# UI
+ui:
+  enabled: true
+  serviceType: LoadBalancer
