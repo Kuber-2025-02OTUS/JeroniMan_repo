@@ -1,0 +1,91 @@
+# test-deployment.yaml
+# Deployment для тестирования CSI S3
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: csi-s3-test-deployment
+  namespace: csi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-s3-test
+  template:
+    metadata:
+      labels:
+        app: csi-s3-test
+    spec:
+      containers:
+      - name: test-container
+        image: busybox:latest
+        command:
+          - sh
+          - -c
+          - |
+            echo "Starting test container..."
+            echo "Mount point: /data"
+            
+            # Создаем тестовые файлы
+            while true; do
+              DATE=$(date '+%Y-%m-%d %H:%M:%S')
+              FILENAME="test-$(date +%s).txt"
+              
+              echo "Creating file: $FILENAME"
+              echo "Test data written at $DATE" > /data/$FILENAME
+              echo "Hostname: $(hostname)" >> /data/$FILENAME
+              echo "Pod name: $HOSTNAME" >> /data/$FILENAME
+              
+              # Выводим список файлов
+              echo "Files in /data:"
+              ls -la /data/
+              
+              # Читаем случайный файл
+              if [ "$(ls -A /data/)" ]; then
+                RANDOM_FILE=$(ls /data/ | shuf -n 1)
+                echo "Content of $RANDOM_FILE:"
+                cat /data/$RANDOM_FILE || true
+              fi
+              
+              # Ждем 30 секунд
+              sleep 30
+            done
+        volumeMounts:
+        - name: s3-volume
+          mountPath: /data
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      volumes:
+      - name: s3-volume
+        persistentVolumeClaim:
+          claimName: csi-s3-pvc
+
+---
+# Pod для интерактивной проверки
+apiVersion: v1
+kind: Pod
+metadata:
+  name: csi-s3-test-pod
+  namespace: csi
+spec:
+  containers:
+  - name: test-container
+    image: busybox:latest
+    command: ["sleep", "3600"]
+    volumeMounts:
+    - name: s3-volume
+      mountPath: /data
+  volumes:
+  - name: s3-volume
+    persistentVolumeClaim:
+      claimName: csi-s3-pvc

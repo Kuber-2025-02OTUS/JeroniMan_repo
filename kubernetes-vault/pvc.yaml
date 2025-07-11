@@ -1,0 +1,15 @@
+# pvc.yaml
+# PersistentVolumeClaim для S3 CSI
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: csi-s3-pvc
+  namespace: csi
+spec:
+  accessModes:
+    - ReadWriteMany  # S3 поддерживает множественный доступ
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: csi-s3

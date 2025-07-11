@@ -1,0 +1,28 @@
+# storageclass.yaml
+# StorageClass для CSI S3 драйвера
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: csi-s3
+provisioner: ch.ctrox.csi.s3-driver
+parameters:
+  # Секрет с ключами доступа
+  csi.storage.k8s.io/provisioner-secret-name: csi-s3-secret
+  csi.storage.k8s.io/provisioner-secret-namespace: csi
+  csi.storage.k8s.io/controller-publish-secret-name: csi-s3-secret
+  csi.storage.k8s.io/controller-publish-secret-namespace: csi
+  csi.storage.k8s.io/node-stage-secret-name: csi-s3-secret
+  csi.storage.k8s.io/node-stage-secret-namespace: csi
+  csi.storage.k8s.io/node-publish-secret-name: csi-s3-secret
+  csi.storage.k8s.io/node-publish-secret-namespace: csi
+  # Параметры монтирования
+  mounter: geesefs
+  options: "--memory-limit 1000 --gc-interval 5"
+  csi.storage.k8s.io/fstype: ext4
+# Политика удаления
+reclaimPolicy: Delete
+# Разрешаем расширение тома
+allowVolumeExpansion: false
+# Режим привязки тома
+volumeBindingMode: Immediate
